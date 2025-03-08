@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario: Tipo de Tejido</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e6f0ff; /* Fondo azul clarito */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .welcome-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    .welcome-container h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .start-button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .start-button:hover {
+      background-color: #0056b3;
+    }
+    .quiz-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+      display: none; /* Oculto inicialmente */
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .image-container {
+      width: 100%;
+      max-width: 400px; /* Tamaño más grande para la imagen */
+      margin: 0 auto 20px;
+    }
+    .image-container img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .option {
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .option:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .congratulations {
+      font-size: 32px;
+      font-weight: bold;
+      color: green;
+      display: none; /* Oculto inicialmente */
+    }
+    .restart-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: none; /* Oculto inicialmente */
+    }
+    .restart-button:hover {
+      background-color: #218838;
+    }
+
+    /* Estilos para respuestas correctas e incorrectas */
+    .option.correct {
+      background-color: #28a745; /* Verde para respuestas correctas */
+    }
+    .option.incorrect {
+      background-color: #dc3545; /* Rojo para respuestas incorrectas */
+    }
+
+    /* Barra de progreso */
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      background-color: #28a745; /* Verde para la barra de progreso */
+      width: 0%; /* Inicialmente vacío */
+      transition: width 0.3s ease;
+    }
+  </style>
+  <!-- Incluir la librería Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+  <!-- Pantalla de inicio -->
+  <div class="welcome-container" id="welcomeContainer">
+    <h1>Bienvenido al Cuestionario de Heridas</h1>
+    <button class="start-button" id="startButton">Empezar cuestionario</button>
+  </div>
+
+  <!-- Cuestionario -->
+  <div class="quiz-container" id="quizContainer">
+    <h1>¿De qué tipo de tejido se trata?</h1>
+    <!-- Barra de progreso -->
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
+    <!-- Contenedor para la imagen -->
+    <div class="image-container" id="imageContainer"></div>
+    <div class="options">
+      <button class="option" data-correct="false">1) Tejido de Epitelización</button>
+      <button class="option" data-correct="false">2) Tejido de Granulación</button>
+      <button class="option" data-correct="true">3) Tejido Necrótico</button>
+      <button class="option" data-correct="false">4) Biofilm</button>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- Mensaje de felicitaciones -->
+  <div class="congratulations" id="congratulations">
+    ¡Enhorabuena, lo has completado!
+    <button class="restart-button" id="restartButton">Volver al principio</button>
+  </div>
+
+  <script>
+    const welcomeContainer = document.getElementById('welcomeContainer');
+    const quizContainer = document.getElementById('quizContainer');
+    const startButton = document.getElementById('startButton');
+    const result = document.getElementById('result');
+    const congratulations = document.getElementById('congratulations');
+    const restartButton = document.getElementById('restartButton');
+    const progress = document.getElementById('progress');
+    const imageContainer = document.getElementById('imageContainer');
+    let currentQuestionIndex = 0;
+
+    // Banco de preguntas
+    const questions = [
+      {
+        woundType: "necrotic",
+        options: [
+          { text: "1) Tejido de Epitelización", correct: false },
+          { text: "2) Tejido de Granulación", correct: false },
+          { text: "3) Tejido Necrótico", correct: true },
+          { text: "4) Biofilm", correct: false },
+        ],
+        woundHTML: '<img src="necrotico.png" alt="Tejido Necrótico">', // Aquí añadí la imagen
+      },
+      {
+        woundType: "granulation",
+        options: [
+          { text: "1) Tejido de Epitelización", correct: false },
+          { text: "2) Tejido de Granulación", correct: true },
+          { text: "3) Tejido Necrótico", correct: false },
+          { text: "4) Biofilm", correct: false },
+        ],
+        woundHTML: '<img src="granulation.png" alt="Tejido de Granulación">',
+      },
+      {
+        woundType: "epithelial",
+        options: [
+          { text: "1) Tejido de Epitelización", correct: true },
+          { text: "2) Tejido de Granulación", correct: false },
+          { text: "3) Tejido Necrótico", correct: false },
+          { text: "4) Biofilm", correct: false },
+        ],
+        woundHTML: '<img src="epitelio.png" alt="Tejido de Epitelización">',
+      },
+    ];
+
+    // Mezclar las preguntas al inicio
+    function shuffleQuestions() {
+      for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+      }
+    }
+
+    // Mostrar el cuestionario al hacer clic en "Empezar cuestionario"
+    startButton.addEventListener('click', () => {
+      welcomeContainer.style.display = "none"; // Ocultar la pantalla de inicio
+      quizContainer.style.display = "block"; // Mostrar el cuestionario
+      shuffleQuestions(); // Mezclar las preguntas
+      currentQuestionIndex = 0; // Reiniciar el índice de la pregunta
+      loadQuestion(); // Cargar la primera pregunta
+    });
+
+    // Función para cargar una pregunta
+    function loadQuestion() {
+      const question = questions[currentQuestionIndex];
+      const optionsContainer = document.querySelector('.options');
+
+      // Actualizar la representación visual de la herida
+      imageContainer.innerHTML = question.woundHTML;
+
+      // Actualizar las opciones de respuesta
+      optionsContainer.innerHTML = question.options
+        .map(
+          (option) =>
+            `<button class="option" data-correct="${option.correct}">${option.text}</button>`
+        )
+        .join("");
+
+      // Añadir evento click a cada opción
+      const options = document.querySelectorAll('.option');
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          if (option.dataset.correct === 'true') {
+            option.classList.add('correct'); // Añadir clase para respuesta correcta
+            result.textContent = '¡Correcto!';
+            result.style.color = 'green';
+
+            // Actualizar la barra de progreso
+            updateProgress();
+
+            // Pasar a la siguiente pregunta
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+              setTimeout(() => {
+                loadQuestion();
+              }, 2000); // Cambiar a la siguiente pregunta después de 2 segundos
+            } else {
+              // Mostrar mensaje de felicitaciones al completar el cuestionario
+              showCongratulations();
+            }
+          } else {
+            option.classList.add('incorrect'); // Añadir clase para respuesta incorrecta
+            result.textContent = 'Incorrecto. Inténtalo de nuevo.';
+            result.style.color = 'red';
+          }
+        });
+      });
+    }
+
+    // Función para actualizar la barra de progreso
+    function updateProgress() {
+      const progressPercentage = ((currentQuestionIndex + 1) / questions.length) * 100;
+      progress.style.width = `${progressPercentage}%`;
+    }
+
+    // Función para mostrar el mensaje de felicitaciones
+    function showCongratulations() {
+      quizContainer.style.display = "none"; // Ocultar el cuestionario
+      congratulations.style.display = "block"; // Mostrar el mensaje
+      restartButton.style.display = "block"; // Mostrar el botón de reinicio
+
+      // Lanzar confeti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    }
+
+    // Función para reiniciar el cuestionario
+    function restartQuiz() {
+      welcomeContainer.style.display = "block"; // Mostrar la pantalla de inicio
+      quizContainer.style.display = "none"; // Ocultar el cuestionario
+      congratulations.style.display = "none"; // Ocultar el mensaje
+      restartButton.style.display = "none"; // Ocultar el botón de reinicio
+
+      // Limpiar el mensaje de resultado
+      result.textContent = "";
+      progress.style.width = "0%"; // Restablecer la barra de progreso
+    }
+
+    // Añadir evento click al botón de reinicio
+    restartButton.addEventListener('click', restartQuiz);
+  </script>
+</body>
+</html>
